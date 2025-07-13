@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 )
 
 type ConsistentHash struct {
@@ -12,6 +13,7 @@ type ConsistentHash struct {
 	HashRing []int
 	HashMap  map[int]string
 	Node     map[string]bool
+	mu       sync.RWMutex
 }
 
 // NewConsistentHash Initializes an empty hash ring with the given number of virtual nodes (replicas)
@@ -31,6 +33,9 @@ func (ch *ConsistentHash) hash(data string) int {
 }
 
 func (ch *ConsistentHash) AddNode(node string) {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
 	if ch.Node[node] {
 		return
 	}
@@ -45,6 +50,9 @@ func (ch *ConsistentHash) AddNode(node string) {
 }
 
 func (ch *ConsistentHash) RemoveNode(node string) {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+
 	if !ch.Node[node] {
 		return
 	}
@@ -64,6 +72,8 @@ func (ch *ConsistentHash) RemoveNode(node string) {
 }
 
 func (ch *ConsistentHash) GetNode(key string) string {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
 	if len(ch.HashRing) == 0 {
 		return ""
 	}
